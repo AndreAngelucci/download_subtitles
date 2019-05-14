@@ -29,11 +29,11 @@ def download(hash_str, file_name):
         headers = headers
     )
     res = conn.getresponse()
-    if (res.status == 200):
+    if (res.status == 200):        
         subtitle = res.read()
-        file_subtitle = re.sub("\.\w+$", ".srt", file_name)
-        with open(file_subtitle, "w") as f:
-            f.writelines(subtitle)
+        file_subtitle = re.sub("\.\w+$", ".srt", file_name)        
+        with open(file_subtitle, "w") as f:            
+            f.writelines(str(subtitle))
             f.close()
     else:
         raise Exception("Legenda nao encontrada.")
