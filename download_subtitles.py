@@ -1,9 +1,9 @@
-#!python3
+#!python
 
 import os
 import hashlib
 import sys
-import http.client
+import requests
 import re
 import glob
 
@@ -14,37 +14,25 @@ def calc_file_hash(file):
         raise Exception("Arquivo %s nao existe." % file)
     readsize = 64 * 1024
     with open(file, 'rb') as f:
-        size = os.path.getsize(file)
         data = f.read(readsize)
         f.seek(-readsize, os.SEEK_END)
         data += f.read(readsize)
     return hashlib.md5(data).hexdigest()
 
-def download(hash_str, file_name):    
-    conn = http.client.HTTPConnection("api.thesubdb.com")
-    headers = {"User-Agent":"SubDB/1.0 (andre/0.1; https://github.com/AndreAngelucci/download_subtitles)"}
-    conn.request(
-        "GET",
-        "/?action=download&hash=%s&language=pt" % hash_str,
-        headers = headers
-    )
-    res = conn.getresponse()
-    if (res.status == 200):      
-        subtitle = res.read().decode('latin-1')        
-        file_subtitle = re.sub("\.\w+$", ".srt", file_name)        
-        with open(file_subtitle, "w") as f:            
-            f.writelines(subtitle)
-            f.close()
-    else:
-        raise Exception("Legenda nao encontrada.")
+def download(hash_str, file_name):
+    r = requests.get(
+        f'http://api.thesubdb.com/?action=download&hash={hash_str}&language=pt',
+        headers={'User-Agent':'SubDB/1.0 (andre/0.1; https://github.com/AndreAngelucci/download_subtitles)'})
+    r.raise_for_status()
+    file_subtitle = os.path.splitext(file_name)[0] + '.srt'
+    with open(file_subtitle, 'w', encoding=r.encoding) as f:
+        f.write(r.text)
 
 try:
     print("Procurando legendas...")
     #encontra os arquivos nos parametros
     files = []
-    for p in sys.argv[1:]:
-        for f in glob.glob(p):
-            files.append(f)
+    files = sys.argv[1:]
     assert(len(files) > 0), USAGE 
     #dict arquivo:hash
     hashs = dict()
